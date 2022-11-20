@@ -1,0 +1,5 @@
+{
+"scripts":{
+"vercel":"npm ok.js"
+}
+}
