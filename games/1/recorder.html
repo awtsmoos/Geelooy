@@ -80,7 +80,7 @@ B"H
                             audio:true
                         }).then(oth => {
                             oth.getAudioTracks().forEach(d=>{
-                                str.addTrack(oth)
+                                str.addTrack(d)
                             })
                             record(str)
                         })
