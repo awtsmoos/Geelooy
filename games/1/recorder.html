@@ -1,0 +1,77 @@
+B"H
+
+
+<br>
+<button id="startsc">start screen</button>
+
+<button id="start">start webcam</button>
+<br>
+<video id="preev1">
+
+</video>
+<br>
+<video id="preev2">
+
+</video>
+<br>
+<script>
+
+    capturer({
+        startDiv:startsc,
+        type:"display",
+        vid: preev1
+    })
+    
+
+    capturer({
+        startDiv:start,
+        vid:preev2
+    })
+    
+
+    function capturer(opts = {}) {
+        var wn = {};
+        var start = opts.startDiv;
+        var vid = opts.vid;
+        start.onclick = () => {
+                
+            if(!wn.mr) {
+                start.innerHTML = "Getting..."
+                navigator.mediaDevices[
+                    opts.type == "display"?"getDisplayMedia"
+                        :"getUserMedia"
+                ]({
+                    video:true,
+                    audio: true
+                }).then(str => {
+                    if(vid) {
+                        vid.srcObject = str
+                        vid.play()
+                    }
+                    console.log(str)
+                    
+                    start.innerHTML = "stop?"
+                    wn.mr = new MediaRecorder(str)
+                    wn.mr.ondataavailable = e => {
+                        if(!window.aa) {
+                            aa = document.createElement("a")
+                        }
+                        aa.download = "BH_"+Date.now() + ".mp4"
+                        aa.href = URL.createObjectURL(
+                            e.data
+                        )
+                        aa.click()
+                        start.innerHTML = "again?"
+                        str.active = false
+                    }
+
+                    wn.mr.start()
+                })
+            } else {
+                wn.mr.stop()
+
+            }
+        }
+    
+    }
+</script> 

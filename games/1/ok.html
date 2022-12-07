@@ -1,0 +1,193 @@
+B"H
+<br>
+<button id="go">Go</button>
+<div id="logs"></div>
+<script src="chayim.js"></script>
+<script src="levels.js"></script>
+<script src="renderer.js"></script>
+<style>
+    #go{
+        z-index:2;
+        position: relative;
+    }
+
+    html,body {
+        overflow:hidden
+    }
+</style>
+<script>
+    
+
+    start()
+    function start() {
+        var keys = []
+        addEventListener("keydown", e=> {
+            keys[e.keyCode] = true;
+        })
+
+
+        addEventListener("keyup", e=> {
+            keys[e.keyCode] = false;
+            console.log(e.keyCode)
+        })
+
+        if(window.Ikar) {
+            var st = Ikar.start()
+            if(st) {
+                play(st, keys)
+            }
+        }
+    }
+    
+
+    function canvisify() {
+        var c = document.createElement("canvas")
+        //var ctx=c.getContext("2d");
+        document.body.appendChild(c);
+        c.style.position="absolute"
+        c.style.left=c.style.top="0"
+        c.style.width=c.style.height="100%"
+        rs()
+        function rs() {
+            c.width=c.clientWidth;
+            c.height=c.clientHeight;
+        }
+        onresize=rs;
+        return c;
+    }
+
+    function play(makom,keys) {
+        var tileSize=32
+        var canvas = canvisify();
+        var makom = buildMakom(makom,tileSize)
+        var layers = makom.layers;
+        var grid = makom.things
+        m=makom
+        var renderer = new Renderer2D({
+            canvas
+        })
+
+        if(!renderer) {
+            console.log("No renderer found!");
+        }
+
+        var vid = document.createElement("video")
+        vid.autoplay = true;
+        vid.muted=true
+        document.body.appendChild(vid)
+        var vidh = new chayim.htmler({
+            html: vid
+        })
+
+        var others = [
+
+        ]
+        others.push(vidh)
+        
+        var cam = new chayim.ayin()
+        var main = {
+            ayin: cam,
+            canvas,
+            renderer,
+            layers,
+            keys,
+            video:vidh,
+            others,
+            tileSize,
+            grid
+        }
+
+        go.onclick = () => {
+            if(!window.etsem) {
+                navigator.mediaDevices.getUserMedia({
+                    video:true,
+                    audio: true
+                }).then(str => {
+                    vid.srcObject = str;
+                    window.etsem = true;
+                    go.disabled = true;
+                    go.innerHTML = "Ha"
+                })
+            }
+        }
+        op=main;
+        update(
+            main
+        )
+    }
+
+    function buildMakom(makom,tileSize) {
+        if(!chayim) return false;
+        
+        var things = makom.map((q,y)=>
+            q.split("")
+            .map((k,x) => {
+                var life = chayim.map[k];
+                if(life) {
+                    var chai = new life({
+                        tileX:x, 
+                        tileY:y,
+                        tileSize
+                    });
+                    return chai
+                } else return null;
+            })
+        )
+        
+        var layers = [];
+        var deef = 0
+        things.forEach(y=> {
+            deef = 0;
+            y.forEach(r=> {
+                if(!r) return;
+                deef = 0
+                if(r.layer||r.layer==0) {
+                    deef = r.layer
+                    
+                }
+              //  console.log("Ok",r)
+                if(!layers[deef]) {
+                    layers[deef] = []
+                }
+                layers[deef].push(r)
+            })
+            
+        })
+        return {things,layers};
+    }
+
+
+    function update(main) {
+        requestAnimationFrame(()=>update(main));
+        main.renderer.clear()
+        main.layers.forEach(l => {
+            if(!l) return;
+            l.forEach(me => {
+                updateRender(main,me)
+                
+            })
+            
+        })
+
+        main.others.forEach(s=>{
+
+            updateRender(main,s)
+        })
+    }
+
+    function updateRender(main,me) {
+
+        if(!me) return;
+        if(typeof(me.heesHawvoos) == "function") {
+            me.heesHawvoos(me, main)
+        }
+        
+        main.renderer.renderDvar(me, main.ayin)
+        
+
+        
+    }
+
+    
+    
+</script>
