@@ -1,335 +1,193 @@
-//B"H
-var chayim = new (function() {
+B"H
+<br>
+<button id="go">Go</button>
+<div id="logs"></div>
+<script src="chayim.js"></script>
+<script src="levels.js"></script>
+<script src="renderer.js"></script>
+<style>
+    #go{
+        z-index:2;
+        position: relative;
+    }
+
+    html,body {
+        overflow:hidden
+    }
+</style>
+<script>
     
-    function dvar(op={}) {
-        this.color = "green"
-        this.border = "1px solid black"
-        var start = (op={}) => {
-            this.x=num(op.x);
-            this.y=num(op.y);
 
-            this.width = (s=>s?s:size)(num(op.width))
-            this.height = (s=>s?s:size)(num(op.height))
-
-        }
-        var size = op.tileSize||op.size
-        this.tileSize=size
-        start({
-            ...op,
-            x:(tx=>tx?tx*size:0)(num(op.tileX)),
-            y:(ty=>ty?ty*size:0)(num(op.tileY))
+    start()
+    function start() {
+        var keys = []
+        addEventListener("keydown", e=> {
+            keys[e.keyCode] = true;
         })
 
+
+        addEventListener("keyup", e=> {
+            keys[e.keyCode] = false;
+            console.log(e.keyCode)
+        })
+
+        if(window.Ikar) {
+            var st = Ikar.start()
+            if(st) {
+                play(st, keys)
+            }
+        }
+    }
+    
+
+    function canvisify() {
+        var c = document.createElement("canvas")
+        //var ctx=c.getContext("2d");
+        document.body.appendChild(c);
+        c.style.position="absolute"
+        c.style.left=c.style.top="0"
+        c.style.width=c.style.height="100%"
+        rs()
+        function rs() {
+            c.width=c.clientWidth;
+            c.height=c.clientHeight;
+        }
+        onresize=rs;
+        return c;
+    }
+
+    function play(makom,keys) {
+        var tileSize=32
+        var canvas = canvisify();
+        var makom = buildMakom(makom,tileSize)
+        var layers = makom.layers;
+        var grid = makom.things
+        m=makom
+        var renderer = new Renderer2D({
+            canvas
+        })
+
+        if(!renderer) {
+            console.log("No renderer found!");
+        }
+
+        var vid = document.createElement("video")
+        vid.autoplay = true;
+        vid.muted=true
+        document.body.appendChild(vid)
+        var vidh = new chayim.htmler({
+            html: vid
+        })
+
+        var others = [
+
+        ]
+        others.push(vidh)
+        
+        var cam = new chayim.ayin()
+        var main = {
+            ayin: cam,
+            canvas,
+            renderer,
+            layers,
+            keys,
+            video:vidh,
+            others,
+            tileSize,
+            grid
+        }
+
+        go.onclick = () => {
+            if(!window.etsem) {
+                navigator.mediaDevices.getUserMedia({
+                    video:true,
+                    audio: true
+                }).then(str => {
+                    vid.srcObject = str;
+                    window.etsem = true;
+                    go.disabled = true;
+                    go.innerHTML = "Ha"
+                })
+            }
+        }
+        op=main;
+        update(
+            main
+        )
+    }
+
+    function buildMakom(makom,tileSize) {
+        if(!chayim) return false;
+        
+        var things = makom.map((q,y)=>
+            q.split("")
+            .map((k,x) => {
+                var life = chayim.map[k];
+                if(life) {
+                    var chai = new life({
+                        tileX:x, 
+                        tileY:y,
+                        tileSize
+                    });
+                    return chai
+                } else return null;
+            })
+        )
+        
+        var layers = [];
+        var deef = 0
+        things.forEach(y=> {
+            deef = 0;
+            y.forEach(r=> {
+                if(!r) return;
+                deef = 0
+                if(r.layer||r.layer==0) {
+                    deef = r.layer
+                    
+                }
+              //  console.log("Ok",r)
+                if(!layers[deef]) {
+                    layers[deef] = []
+                }
+                layers[deef].push(r)
+            })
+            
+        })
+        return {things,layers};
+    }
+
+
+    function update(main) {
+        requestAnimationFrame(()=>update(main));
+        main.renderer.clear()
+        main.layers.forEach(l => {
+            if(!l) return;
+            l.forEach(me => {
+                updateRender(main,me)
+                
+            })
+            
+        })
+
+        main.others.forEach(s=>{
+
+            updateRender(main,s)
+        })
+    }
+
+    function updateRender(main,me) {
+
+        if(!me) return;
+        if(typeof(me.heesHawvoos) == "function") {
+            me.heesHawvoos(me, main)
+        }
+        
+        main.renderer.renderDvar(me, main.ayin)
+        
+
         
     }
 
-    function htmler(op={}) {
-        dvar.call(this,op)
-        this.shape = "html"
-        this.html = op.html || document.createElement("div")
-    }
-
-    function ayin(op={}) {
-        dvar.call(this,op)
-        this.zoom = 1;
-        this.pivotX = 0
-        this.pivotY = 0
-    }
-
-    function tree(op={}) {
-        dvar.call(this,op)
-        this.meen = "eelan"
-        this.layer =1 
-    }
-
-    function player(op={}) {
-        dvar.call(this,op)
-        this.color = "blue"
-        this.meen = "player"
-        var dx = 0;
-        var dy = 0;
-        var speed = 3;
-        this.layer = 2
-        var following = true;
-        var down = []
-        this.collisionLayers = [1]
-        var curTile;
-        var mcl
-        var mx;
-        var my;
-        var string = ""
-        var logged = false
-        
-        this.checkTile = (main) => {
-
-            if(
-                main.grid[curTile.y]
-            ) {
-                
-                
-                mcl = main.grid[curTile.y][curTile.x]
-                if(mcl && mcl.type != this.meen) {
-                    return true;
-                } 
-                return false;
-            }
-            return false;
-        }
-
-        this.heesHawvoos = (me, main) => {
-            dx = 0;
-            dy = 0;
-            if(
-                main.keys[
-                    37//left
-                ]
-            ) {
-                dx = -1
-            }
-
-            if(
-                main.keys[
-                    39
-                ]
-            ) {
-                dx = 1
-            }
-
-            if(
-                main.keys[
-                    40
-                ]
-            ) {
-                dy = 1
-            }
-
-
-            if(
-                main.keys[
-                    38
-                ]
-            ) {
-                dy = -1
-            }
-
-
-            mx = dx * speed;
-            my = dy * speed;
-
-            /*
-                check tile to left
-            */
-          
-            
-            if(dx < 0) {
-                curTile = tile(
-                    this.x + dx,
-                    this.y,
-                    this.tileSize
-                    
-                )
-                if(this.checkTile(main)) {
-                    
-                    mx = 0
-
-                    this.x = curTile.x * this.tileSize +
-                        mcl.width
-                    
-                }
-
-                curTile = tile(
-                    this.x + dx,
-                    this.y + this.tileSize-1,
-                    this.tileSize
-                    
-                )
-                if(this.checkTile(main)) {
-                    mx = 0
-
-                    this.x = curTile.x * this.tileSize +
-                        mcl.width
-                }
-            }
-            /*
-                from top left corner of player, check one corner
-                to right
-            */
-            
-            if(dx > 0) {
-                curTile = tile(
-                    this.x + this.tileSize + dx,
-                    this.y,
-                    this.tileSize
-                    
-                )
-                if(this.checkTile(main)) {
-                    mx = 0
-
-                    this.x = curTile.x * this.tileSize -
-                        mcl.width
-                }
-
-                curTile = tile(
-                    this.x + this.tileSize + dx,
-                    this.y + this.tileSize-1,
-                    this.tileSize
-                    
-                )
-                if(this.checkTile(main)) {
-                    mx = 0
-
-                    this.x = curTile.x * this.tileSize -
-                        mcl.width
-                }
-            }
-
-            /*
-                if moving upwards,
-                check tile above
-            */
-            if(dy < 0) {
-                curTile = tile(
-                    this.x,
-                    this.y + dy,
-                    this.tileSize
-                    
-                )
-                if(this.checkTile(main)) {
-                    my = 0
-
-                    this.y = curTile.y * this.tileSize +
-                        mcl.height
-                }
-
-                curTile = tile(
-                    this.x + this.tileSize-1,
-                    this.y + dy,
-                    this.tileSize
-                    
-                )
-                if(this.checkTile(main)) {
-                    my = 0
-
-                    this.y = curTile.y * this.tileSize +
-                        mcl.height
-                }
-            }
-
-
-            /*
-                if moving downwards,
-                check tile below
-            */
-                if(dy > 0) {
-                    curTile = tile(
-                        this.x,
-                        this.y + this.tileSize + dy,
-                        this.tileSize
-                        
-                    )
-                    if(this.checkTile(main)) {
-                        my = 0
     
-                        this.y = curTile.y * this.tileSize -
-                            mcl.height
-                    }
-
-                    curTile = tile(
-                        this.x + this.tileSize-1,
-                        this.y + this.tileSize + dy,
-                        this.tileSize
-                        
-                    )
-                    if(this.checkTile(main)) {
-                        my = 0
     
-                        this.y = curTile.y * this.tileSize -
-                            mcl.height
-                    }
-                }
-            /*
-            string =  "Hi. " + curTile.y + ":"
-            +curTile.x
-
-           */
-
-            logs.innerHTML = string
-
-            this.x += mx;
-            this.y += my;
-
-            if(
-                main.keys[
-                    68
-                ]
-            ) {
-                main.ayin.zoom -= 0.05
-            }
-
-
-            if(
-                main.keys[
-                    70
-                ]
-            ) {
-                main.ayin.zoom += 0.05
-            }
-
-
-            if(
-                main.keys[86]
-            ) {
-                if(!following) {
-                    following = true;
-                    down[86] = true
-                } else {
-                    following = false;
-                    down[86] = true
-                }
-                
-            } else {
-                if(following) {
-                    if(down[86]) {
-                        down[86] = false
-                    }
-                }
-            }
-
-
-            if(following) {
-                main.ayin.pivotX = this.x+ (this.width/2)
-                main.ayin.pivotY = this.y+ (this.height/2)
-            }
-            main.video.x = this.x;
-            main.video.y = this.y
-
-        }
-
-
-    }
-
-
-    this.dvar = dvar;
-    this.ayin=ayin;
-    this.tree=tree;
-    this.player=player;
-    this.htmler = htmler
-    this.map = {
-        "t":tree,
-        "p":player
-    }
-    this.num=num
-    function num(n) {
-        return typeof(n) == "number" ? n : 0
-    }
-    function tile(x,y,tileSize) {
-        return {
-            x: Math.floor(
-                x/tileSize
-            ),
-            y: Math.floor(
-                y/tileSize
-            )
-        }
-    }
-})();
+</script>
