@@ -6,11 +6,11 @@ B"H
 
 <button id="start">start webcam</button>
 <br>
-<video id="preev1">
+<video id="preev1" controls>
 
 </video>
 <br>
-<video id="preev2">
+<video id="preev2" controls>
 
 </video>
 <br>
@@ -19,6 +19,7 @@ B"H
     capturer({
         startDiv:startsc,
         type:"display",
+        add:"webcam",
         vid: preev1
     })
     
@@ -33,6 +34,32 @@ B"H
         var wn = {};
         var start = opts.startDiv;
         var vid = opts.vid;
+
+        function record(stream) {
+            if(vid) {
+                vid.srcObject = str
+                vid.play()
+                vid.muted=true;
+            }
+            console.log(str)
+            
+            start.innerHTML = "stop?"
+            wn.mr = new MediaRecorder(str)
+            wn.mr.ondataavailable = e => {
+                if(!window.aa) {
+                    aa = document.createElement("a")
+                }
+                aa.download = "BH_"+Date.now() + ".mp4"
+                aa.href = URL.createObjectURL(
+                    e.data
+                )
+                aa.click()
+                start.innerHTML = "again?"
+                str.active = false
+            }
+
+            wn.mr.start()
+        }
         start.onclick = () => {
                 
             if(!wn.mr) {
@@ -44,28 +71,23 @@ B"H
                     video:true,
                     audio: true
                 }).then(str => {
-                    if(vid) {
-                        vid.srcObject = str
-                        vid.play()
+                    if(opts.add) {
+                        navigator.mediaDevices[
+                            opts.add == "webcam" ?
+                            "getUserMedia" : 
+                            "getDisplayMedia"
+                        ]({
+                            audio:true
+                        }).then(oth => {
+                            oth.getAudioTracks().forEach(d=>{
+                                str.addTrack(oth)
+                            })
+                            record(str)
+                        })
+                    } else {
+                        record(str)
                     }
-                    console.log(str)
                     
-                    start.innerHTML = "stop?"
-                    wn.mr = new MediaRecorder(str)
-                    wn.mr.ondataavailable = e => {
-                        if(!window.aa) {
-                            aa = document.createElement("a")
-                        }
-                        aa.download = "BH_"+Date.now() + ".mp4"
-                        aa.href = URL.createObjectURL(
-                            e.data
-                        )
-                        aa.click()
-                        start.innerHTML = "again?"
-                        str.active = false
-                    }
-
-                    wn.mr.start()
                 })
             } else {
                 wn.mr.stop()
